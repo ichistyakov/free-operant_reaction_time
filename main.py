@@ -22,7 +22,7 @@ COLORDICT = {
 
 # Controls general flow of the program
 def main():
-    global FPSCLOCK, DISPLAYSURF, BASICFONT
+    global FPSCLOCK, DISPLAYSURF, BASICFONT, KITTY
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
