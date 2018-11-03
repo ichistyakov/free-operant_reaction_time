@@ -44,14 +44,21 @@ def experiment():
         'name': next(PHASES),
         'id': 1,
     }
-    stimulus = {
-        'text': 'white',
-        'color': 'white',
-        'pos': (400, 300)
-    }
     button = {
         'bounds': pygame.Rect(350, 450, 100, 100),
         'state': 'normal'
+    }
+    stimuli = {
+        'left': {
+            'text': 'white',
+            'color': 'white',
+            'pos': (300, 300)
+        },
+        'right': {
+            'text': 'white',
+            'color': 'white',
+            'pos': (500, 300)
+        }
     }
     reinforcement = {
         'count': 0,
@@ -66,25 +73,23 @@ def experiment():
             if event.type == QUIT:
                 terminate()
             phase = phase_handler(event, **phase)
-            stimulus = stimuli_handler(event, phase['name'], **stimulus)
+            for k in stimuli:
+                stimuli[k] = stimuli_handler(event, phase['name'], **stimuli[k])
             button = button_state_handler(event, **button)
-            reinforcement = reinforcement_handler(button['state'], event, **reinforcement)
+            reinforcement = reinforcement_handler(button['state'], 'color', **reinforcement, **stimuli)
         # Draws states
-        text_stimulus(**stimulus)
+        for k in stimuli:
+            text_object(**stimuli[k])
         button_object(**button)
+        text_object((100, 100), f"Score: {reinforcement['count']}", 'white', align=False)
         # Updates screen
         pygame.display.update()
         FPSCLOCK.tick(FPS)
 
 
-# Checks button state and updates score. Only one correct response per stimuli is reinforced.
-def reinforcement_handler(button_state, ivent, **current_state):
-    count = current_state['count']
-    available = current_state['available']
-    if available:
-        if button_state == 'pressed':
-            count += 1
-            available = False  # Reinforcement becomes unavailable until nearest stimuli change
+def reinforcement_refresher(ivent, **current_rf_state):
+    count = current_rf_state['count']
+    available = current_rf_state['available']
     if ivent.type == CHANGE_STIMULI:
         available = True
     new_state = {
@@ -92,6 +97,30 @@ def reinforcement_handler(button_state, ivent, **current_state):
         'available': available
     }
     return new_state
+
+
+# Checks button state and updates score. Only one correct response per stimuli is reinforced.
+def reinforcement_handler(button_state, key, count, available, **current_sd_state):
+    complex_sd = complex_sd_handler(key, **current_sd_state)
+    if available and complex_sd:
+        if button_state == 'pressed':
+            count += 1
+            available = False  # Reinforcement becomes unavailable until nearest stimuli change
+    new_state = {
+        'count': count,
+        'available': available
+    }
+    return new_state
+
+
+# Checks whether criteria for reinforcement are satisfied
+# Accepts parameter for check and parameters dictionary
+def complex_sd_handler(key, **current_sd_state):
+    stimuli = [current_sd_state[k][key] for k in current_sd_state]
+    if all(x == stimuli[0] for x in stimuli):
+        return True
+    else:
+        return False
 
 
 # Checks events and updates the state of the button
@@ -174,10 +203,7 @@ def button_object(**kwargs):
 
 # Receives a dict of stimulus paramaters and modifies the global surface
 # This side effect is intended
-def text_stimulus(align = True, **kwargs):
-    pos = kwargs['pos']
-    text = kwargs['text']
-    color = kwargs['color']
+def text_object(pos, text, color, align=True):
     font = BASICFONT
     text_surface, bounds = get_surface(font, text, COLORDICT.get(color))
     if align:
