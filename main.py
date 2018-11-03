@@ -5,18 +5,19 @@ from pygame.locals import *
 
 
 FPS = 60
-WORDS = ['white', 'red', 'green', 'blue']
-COLORS = ['white', 'red', 'green', 'blue']
+WORDS = [u'желтый', u'красный', u'зеленый', u'синий']
+COLORS = [u'желтый', u'красный', u'зеленый', u'синий']
 PHASES = itertools.cycle(['A', 'B'])
 BACKGROUND = c.BLACK
 BUTTON_NORMAL_BACK_COLOR = c.RED1
 BUTTON_HOVER_BACK_COLOR = c.RED2
 BUTTON_PRESSED_BACK_COLOR = c.RED3
 COLORDICT = {
-    'white': c.WHITE,
-    'red': c.RED1,
-    'green': c.GREEN,
-    'blue': c.BLUE
+    u'желтый': c.YELLOW1,
+    u'красный': c.RED1,
+    u'зеленый': c.GREEN1,
+    u'синий': c.BLUE,
+    'white': c.WHITE
 }
 
 
@@ -50,19 +51,23 @@ def experiment():
     }
     stimuli = {
         'left': {
-            'text': 'white',
-            'color': 'white',
+            'text': u'желтый',
+            'color': u'желтый',
             'pos': (300, 300)
         },
         'right': {
-            'text': 'white',
-            'color': 'white',
+            'text': u'желтый',
+            'color': u'желтый',
             'pos': (500, 300)
         }
     }
     reinforcement = {
         'count': 0,
         'available': True
+    }
+    score_display = {
+        'pos': (100, 100),
+        'color': 'white'
     }
 
     pygame.time.set_timer(CHANGE_STIMULI, 1000)
@@ -77,19 +82,19 @@ def experiment():
                 stimuli[k] = stimuli_handler(event, phase['name'], **stimuli[k])
             button = button_state_handler(event, **button)
             reinforcement = reinforcement_handler(button['state'], 'color', **reinforcement, **stimuli)
+            reinforcement = reinforcement_refresher(event, **reinforcement)
         # Draws states
         for k in stimuli:
             text_object(**stimuli[k])
         button_object(**button)
-        text_object((100, 100), f"Score: {reinforcement['count']}", 'white', align=False)
+        text_object(text=f"Score: {reinforcement['count']}", align=False, **score_display)
         # Updates screen
         pygame.display.update()
         FPSCLOCK.tick(FPS)
 
 
-def reinforcement_refresher(ivent, **current_rf_state):
-    count = current_rf_state['count']
-    available = current_rf_state['available']
+# Receives current reinforcement state and updates availability
+def reinforcement_refresher(ivent, count, available):
     if ivent.type == CHANGE_STIMULI:
         available = True
     new_state = {
@@ -99,7 +104,8 @@ def reinforcement_refresher(ivent, **current_rf_state):
     return new_state
 
 
-# Checks button state and updates score. Only one correct response per stimuli is reinforced.
+# Checks button state and updates score
+# Only one correct response per stimuli is reinforced
 def reinforcement_handler(button_state, key, count, available, **current_sd_state):
     complex_sd = complex_sd_handler(key, **current_sd_state)
     if available and complex_sd:
@@ -123,10 +129,9 @@ def complex_sd_handler(key, **current_sd_state):
         return False
 
 
-# Checks events and updates the state of the button
-def button_state_handler(ivent, **current_state):
-    bounds = current_state['bounds']
-    state = current_state['state']
+# Inputs: event, bounds of the button, state of the button
+# Outputs: same bounds, but new state if necessary
+def button_state_handler(ivent, bounds, state):
     if ivent.type == pygame.MOUSEMOTION:
         if bounds.collidepoint(ivent.pos):
             state = 'hover'
@@ -149,10 +154,7 @@ def button_state_handler(ivent, **current_state):
 
 # Generates new stimuli configuration every CHANGE_STIMULI
 # Produced stimuli depend on the current phase
-def stimuli_handler(ivent, phase, **stim_parameters):
-    text = stim_parameters['text']
-    color = stim_parameters['color']
-    pos = stim_parameters['pos']
+def stimuli_handler(ivent, phase, text, color, pos):
     if ivent.type == CHANGE_STIMULI:
         if phase == 'A':
             text = random.choice(WORDS)
@@ -173,9 +175,7 @@ def stimuli_handler(ivent, phase, **stim_parameters):
 
 # Receives current phase name and id
 # If Q is pressed - returns next name and id from infinite iterator PHASES (defined at the beginning)
-def phase_handler(ivent, **current_state):
-    name = current_state['name']
-    id = current_state['id']
+def phase_handler(ivent, name, id):
     if ivent.type == KEYDOWN and ivent.key == K_q:
         name = next(PHASES)
         id += 1
@@ -188,9 +188,7 @@ def phase_handler(ivent, **current_state):
 
 # Receives a dict of button parameters and modifies the global surface
 # This side effect is intended
-def button_object(**kwargs):
-    bounds = kwargs['bounds']
-    state = kwargs['state']
+def button_object(bounds, state):
     color_dict = {
         'normal': BUTTON_NORMAL_BACK_COLOR,
         'hover': BUTTON_HOVER_BACK_COLOR,
@@ -226,6 +224,7 @@ def get_surface(font, text, color):
 def terminate():
     pygame.quit()
     sys.exit()
+
 
 # Starts program
 if __name__ == '__main__':
