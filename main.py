@@ -25,7 +25,8 @@ def main():
     # Initialize GUI
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
-    DISPLAYSURF = pygame.display.set_mode((0, 0))
+    DISPLAYSURF = pygame.display.set_mode(c.SCREEN_SIZE)
+    SURFWIDTH, SURFHEIGHT = pygame.display.get_surface().get_size()
     BASICFONT = pygame.font.SysFont(c.FONTNAME, c.FONTSIZE)
     pygame.display.set_caption(c.CAPTION)
 

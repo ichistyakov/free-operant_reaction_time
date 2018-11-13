@@ -12,6 +12,7 @@ FPS = 60
 FONTNAME = 'Arial'
 FONTSIZE = 40
 CAPTION = 'Reaction time experiment'
+SCREEN_SIZE = (800, 600)
 # Session parameters
 DEFAULT_NAME = 'A_girl_has_no_name'
 DEFAULT_SESSION = 'Infinity'
